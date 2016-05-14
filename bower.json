@@ -1,0 +1,21 @@
+{
+  "name": "purescript-suggest",
+  "version": "1.0.0",
+  "moduleType": [
+    "node"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-console": "^0.1.0",
+    "purescript-psa": "https://github.com/natefaubion/purescript-psa.git#^0.3.8",
+    "purescript-refs": "^0.2.0"
+  },
+  "devDependencies": {
+    "purescript-test-unit": "^6.0.0"
+  }
+}

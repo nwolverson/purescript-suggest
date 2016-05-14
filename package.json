@@ -1,0 +1,17 @@
+{
+  "name": "purescript-suggest",
+  "version": "0.1.0",
+  "description": "Apply PureScript compiler suggestions to fix warnings",
+  "bin": {
+    "ps-suggest": "cli/index.js"
+  },
+  "scripts": {
+    "build": "pulp build -I cli/src",
+    "test": "pulp test"
+  },
+  "keywords": [
+    "purescript"
+  ],
+  "author": "Nicholas Wolverson",
+  "license": "ISC"
+}
