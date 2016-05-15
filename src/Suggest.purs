@@ -102,13 +102,20 @@ replaceFile lines filename group = do
       File.writeTextFile Encoding.UTF8 filename $ intercalate "\n" lines
       log $ filename <> ": Applied " <> show (Array.length group) <> " fixes"
 
+-- | This is where all the real work happens.
+-- | Steps through the source file, outputting replacement text when the position
+-- | matches otherwise the original text. Objects if replacements overlap or go past the file end.
 replaceFile' :: Int -> List String -> List Replacement -> Either String (List String)
 replaceFile' n lines reps@(Cons { position: { startLine } } _) | n < startLine && length lines >= startLine - n =
   (take count lines <> _) <$> replaceFile' startLine (drop count lines) reps
   where
     count = startLine - n
 replaceFile' n lines (Cons r@{ position: { startLine, endLine }, original, replacement } reps) | n == startLine =
-  (Cons (trim replacement)) <$> replaceFile' (endLine+1) (drop (endLine - startLine + 1) lines) reps
+  let newText = case replacement of
+        "" -> id
+        _ -> Cons (trim replacement)
+  in
+    newText <$> replaceFile' (endLine+1) (drop (endLine - startLine + 1) lines) reps
 replaceFile' n _ reps@(Cons { position: { startLine } } _) | n > startLine =
   Left $ "Found replacement starting before current position: " <> show startLine <> ", " <> show n
 replaceFile' _ lines Nil = pure lines
