@@ -14,5 +14,11 @@
     "purescript"
   ],
   "author": "Nicholas Wolverson",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "url": "https://github.com/nwolverson/purescript-suggest"
+  },
+  "bugs": {
+    "url": "https://github.com/nwolverson/purescript-suggest/issues"
+  }
 }
