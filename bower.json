@@ -1,6 +1,5 @@
 {
   "name": "purescript-suggest",
-  "version": "1.0.0",
   "moduleType": [
     "node"
   ],
