@@ -2,6 +2,7 @@ module Suggest where
 
 import Prelude
 import Data.Array as Array
+import Data.List as List
 import Data.StrMap.ST as STMap
 import Data.String as Str
 import Node.Encoding as Encoding
@@ -13,7 +14,7 @@ import Control.Monad.ST (ST)
 import Data.Array (concat, head, groupBy, mapMaybe, catMaybes, sortBy)
 import Data.Either (Either(Right, Left))
 import Data.Foldable (for_, intercalate)
-import Data.List (length, fromFoldable, take, drop, List(Nil, Cons))
+import Data.List ((!!), length, fromFoldable, take, drop, List(Nil, Cons))
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
 import Data.StrMap.ST (STStrMap)
 import Data.String (trim, joinWith)
@@ -110,12 +111,15 @@ replaceFile' n lines reps@(Cons { position: { startLine } } _) | n < startLine &
   (take count lines <> _) <$> replaceFile' startLine (drop count lines) reps
   where
     count = startLine - n
-replaceFile' n lines (Cons r@{ position: { startLine, endLine }, original, replacement } reps) | n == startLine =
-  let newText = case replacement of
+replaceFile' n lines (Cons r@{ position: { startLine, startColumn, endLine, endColumn }, original, replacement } reps) | n == startLine =
+  let initial = Str.take (startColumn - 1) (fromMaybe "" $ List.head lines)
+      final = Str.drop (endColumn - 1) (fromMaybe "" $ lines !! (endLine - startLine))
+      newText = initial <> trim replacement <> final
+      replaceNewText = case newText of
         "" -> id
-        _ -> Cons (trim replacement)
+        _ -> Cons newText
   in
-    newText <$> replaceFile' (endLine+1) (drop (endLine - startLine + 1) lines) reps
+    replaceNewText <$> replaceFile' (endLine+1) (drop (endLine - startLine + 1) lines) reps
 replaceFile' n _ reps@(Cons { position: { startLine } } _) | n > startLine =
   Left $ "Found replacement starting before current position: " <> show startLine <> ", " <> show n
 replaceFile' _ lines Nil = pure lines

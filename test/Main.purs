@@ -32,6 +32,17 @@ main = runTest do
     test "replacements overlap" do
       let replacements = replace (List.fromFoldable [testReplacement 2 4 "TEXT1", testReplacement 3 5 "TEXT2"])
       Assert.assert "should be Left" $ isLeft replacements
+  suite "suggestions within a line" do
+    test "suggestion within single line" do
+      let replacements = replace (List.singleton (testReplacement' 2 2 2 4 "_"))
+      Assert.equal (Right $ List.fromFoldable [ "Line 1", "L_e 2", "Line 3", "Line 4", "Line 5" ]) replacements
+    test "suggestions across multiple lines" do
+      let replacements = replace (List.singleton (testReplacement' 2 2 3 4 "_"))
+      Assert.equal (Right $ List.fromFoldable [ "Line 1", "L_e 3", "Line 4", "Line 5" ]) replacements
+    test "multiple suggestions on one line" do
+      let replacements = replace (List.fromFoldable [testReplacement' 2 1 2 2 "_", testReplacement' 2 4 2 6 "_"])
+      Assert.equal (Right $ List.fromFoldable [ "Line 1", "_in_3", "Line 4", "Line 5" ]) replacements
+
 
   where
   -- psc line indexing is 1-based
@@ -47,7 +58,14 @@ main = runTest do
 
   testReplacement startLine endLine replacement =
     { filename: testFileName
-    , position: { startLine, startColumn: 0, endLine, endColumn: 0 }
+    , position: { startLine, startColumn: 1, endLine, endColumn: 7 }
+    , original: "I think this is unused"
+    , replacement
+    }
+
+  testReplacement' startLine startColumn endLine endColumn replacement =
+    { filename: testFileName
+    , position: { startLine, startColumn, endLine, endColumn }
     , original: "I think this is unused"
     , replacement
     }
