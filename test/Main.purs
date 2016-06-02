@@ -6,6 +6,7 @@ import Test.Unit.Assert as Assert
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
 import Data.Either (isLeft, Either(Right))
+import Data.Foldable (intercalate)
 import Suggest (replaceFile')
 import Test.Unit (test, suite)
 import Test.Unit.Console (TESTOUTPUT)
@@ -16,16 +17,16 @@ main = runTest do
   suite "suggestions" do
     test "replace multi-line" do
       let replacements = replace (List.singleton (testReplacement 2 3 "REPLACEMENT"))
-      Assert.equal (Right $ List.fromFoldable [ "Line 1", "REPLACEMENT", "Line 4", "Line 5" ]) replacements
+      Assert.equal (result [ "Line 1", "REPLACEMENT", "Line 4", "Line 5" ]) replacements
     test "replace single-line" do
       let replacements = replace (List.singleton (testReplacement 2 2 "REPLACEMENT"))
-      Assert.equal (Right $ List.fromFoldable [ "Line 1", "REPLACEMENT", "Line 3", "Line 4", "Line 5" ]) replacements
+      Assert.equal (result [ "Line 1", "REPLACEMENT", "Line 3", "Line 4", "Line 5" ]) replacements
     test "2 replacements with gap" do
       let replacements = replace (List.fromFoldable [testReplacement 2 2 "TEXT1", testReplacement 4 4 "TEXT2"])
-      Assert.equal (Right $ List.fromFoldable [ "Line 1", "TEXT1", "Line 3", "TEXT2", "Line 5" ]) replacements
+      Assert.equal (result [ "Line 1", "TEXT1", "Line 3", "TEXT2", "Line 5" ]) replacements
     test "2 replacements with no gap" do
       let replacements = replace (List.fromFoldable [testReplacement 2 3 "TEXT1", testReplacement 4 4 "TEXT2"])
-      Assert.equal (Right $ List.fromFoldable [ "Line 1", "TEXT1", "TEXT2", "Line 5" ]) replacements
+      Assert.equal (result [ "Line 1", "TEXT1", "TEXT2", "Line 5" ]) replacements
     test "replacement after end of file" do
       let replacements = replace (List.fromFoldable [testReplacement 10 20 "ERROR"])
       Assert.assert "should be Left" $ isLeft replacements
@@ -35,18 +36,19 @@ main = runTest do
   suite "suggestions within a line" do
     test "suggestion within single line" do
       let replacements = replace (List.singleton (testReplacement' 2 2 2 4 "_"))
-      Assert.equal (Right $ List.fromFoldable [ "Line 1", "L_e 2", "Line 3", "Line 4", "Line 5" ]) replacements
+      Assert.equal (result [ "Line 1", "L_e 2", "Line 3", "Line 4", "Line 5" ]) replacements
     test "suggestions across multiple lines" do
       let replacements = replace (List.singleton (testReplacement' 2 2 3 4 "_"))
-      Assert.equal (Right $ List.fromFoldable [ "Line 1", "L_e 3", "Line 4", "Line 5" ]) replacements
+      Assert.equal (result [ "Line 1", "L_e 3", "Line 4", "Line 5" ]) replacements
     test "multiple suggestions on one line" do
       let replacements = replace (List.fromFoldable [testReplacement' 2 1 2 2 "_", testReplacement' 2 4 2 6 "_"])
-      Assert.equal (Right $ List.fromFoldable [ "Line 1", "_in_3", "Line 4", "Line 5" ]) replacements
+      Assert.equal (result [ "Line 1", "_in_2", "Line 3", "Line 4", "Line 5" ]) replacements
 
 
   where
   -- psc line indexing is 1-based
-  replace = replaceFile' 1 (List.fromFoldable testFile)
+  replace x = intercalate "" <$> replaceFile' 1 1 (List.fromFoldable testFile) x
+  result = Right <<< intercalate "\n"
   testFile = [
       "Line 1"
     , "Line 2"
