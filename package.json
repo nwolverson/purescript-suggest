@@ -1,6 +1,6 @@
 {
   "name": "purescript-suggest",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Apply PureScript compiler suggestions to fix warnings",
   "bin": {
     "ps-suggest": "cli/index.js"
