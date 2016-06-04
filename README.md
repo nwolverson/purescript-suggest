@@ -5,16 +5,11 @@ removing redundant imports, or making imports explicit.
 
 # Warning
 
-This is ALPHA software that modifies your source code in place by design. Errors in
+This is a tool that modifies your source code in place by design. Errors in
 this code, or any issues with the warnings passed in, could result in the deletion
 of your precious source code.
 
 COMMIT EARLY COMMIT OFTEN.
-
-## Known issues
-
-Not currently handling any error suggestions which don't span entire lines. As of
-the compiler version 0.8.5 I think this is OK but by 0.9.0 improvements will be required.
 
 # Installation
 
