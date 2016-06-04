@@ -11,10 +11,16 @@
   ],
   "dependencies": {
     "purescript-console": "^0.1.0",
-    "purescript-psa": "https://github.com/nwolverson/purescript-psa.git#json-suggestion-position",
-    "purescript-refs": "^0.2.0"
+    "purescript-psa": "git://github.com/natefaubion/purescript-psa#0.3.9",
+    "purescript-refs": "^0.2.0",
+    "purescript-node-streams": "^0.6.0",
+    "purescript-node-process": "^0.5.0",
+    "purescript-node-buffer": "^0.2.2"
   },
   "devDependencies": {
     "purescript-test-unit": "^6.0.0"
+  },
+  "resolutions": {
+    "purescript-node-streams": "^0.6.0"
   }
 }
