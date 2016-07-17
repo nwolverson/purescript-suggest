@@ -12,7 +12,7 @@ import Control.Monad.Eff.Console (CONSOLE, error, log)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.ST (ST)
 import Data.Array (mapMaybe, concat, head, groupBy, catMaybes, sortBy)
-import Data.Either (Either(Right, Left))
+import Data.Either (Either(Right, Left), either)
 import Data.Foldable (for_, intercalate)
 import Data.List (List(Nil, Cons), drop, (!!), length, fromFoldable)
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
@@ -116,7 +116,7 @@ replaceFile' n _ lines reps@(Cons { position: { startLine } } _) | n < startLine
 replaceFile' n m lines (Cons r@{ position: { startLine, startColumn, endLine, endColumn }, original, replacement } reps) | n == startLine =
   let initial = Str.take (startColumn - m) (fromMaybe "" $ List.head lines)
       final = Str.drop (endColumn - (if startLine == endLine then m else 1)) (fromMaybe "" $ lines !! (endLine - startLine))
-      trailingNewline = Regex.test (Regex.regex "\n\\s+$" Regex.noFlags) replacement
+      trailingNewline = either (const true) (\regex -> Regex.test regex replacement) (Regex.regex "\n\\s+$" Regex.noFlags)
       addNewline = trailingNewline && (not $ Str.null final)
       newText = initial <> trim replacement <> (if addNewline then "\n" else "")
       replaceNewText = case newText of

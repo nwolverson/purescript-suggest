@@ -10,17 +10,14 @@
     "output"
   ],
   "dependencies": {
-    "purescript-console": "^0.1.0",
-    "purescript-psa": "git://github.com/natefaubion/purescript-psa#0.3.9",
-    "purescript-refs": "^0.2.0",
-    "purescript-node-streams": "^0.6.0",
-    "purescript-node-process": "^0.5.0",
-    "purescript-node-buffer": "^0.2.2"
+    "purescript-console": "^1.0.0",
+    "purescript-psa-utils": "^1.0.0",
+    "purescript-refs": "^1.0.0",
+    "purescript-node-streams": "^1.0.0",
+    "purescript-node-process": "^1.0.0",
+    "purescript-node-buffer": "^1.0.0"
   },
   "devDependencies": {
-    "purescript-test-unit": "^6.0.0"
-  },
-  "resolutions": {
-    "purescript-node-streams": "^0.6.0"
+    "purescript-test-unit": "^7.0.0"
   }
 }
