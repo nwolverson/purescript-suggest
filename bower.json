@@ -14,7 +14,7 @@
     "purescript-psa-utils": "^1.0.0",
     "purescript-refs": "^1.0.0",
     "purescript-node-streams": "^1.0.0",
-    "purescript-node-process": "^1.0.0",
+    "purescript-node-process": "^2.0.0",
     "purescript-node-buffer": "^1.0.0"
   },
   "devDependencies": {
