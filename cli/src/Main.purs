@@ -1,7 +1,6 @@
 module Main where
 
 import Prelude
-import Control.Monad (when, unless)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (error, CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION)
