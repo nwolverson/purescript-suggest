@@ -8,14 +8,14 @@
   "scripts": {
     "build": "pulp build -I cli/src",
     "preversion": "npm test",
-    "prepublish": "npm run build",
+    "prepublish": "bower install && npm run build",
     "test": "pulp test"
   },
   "keywords": [
     "purescript"
   ],
   "author": "Nicholas Wolverson",
-  "license": "ISC",
+  "license": "MIT",
   "repository": {
     "url": "https://github.com/nwolverson/purescript-suggest"
   },

@@ -11,13 +11,13 @@
   ],
   "dependencies": {
     "purescript-console": "^1.0.0",
-    "purescript-psa-utils": "^1.0.0",
+    "purescript-psa-utils": "^1.0.1",
     "purescript-refs": "^1.0.0",
     "purescript-node-streams": "^1.0.0",
     "purescript-node-process": "^2.0.0",
     "purescript-node-buffer": "^1.0.0"
   },
   "devDependencies": {
-    "purescript-test-unit": "^7.0.0"
+    "purescript-test-unit": "^9.1.0"
   }
 }
