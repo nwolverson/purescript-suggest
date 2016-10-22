@@ -11,7 +11,7 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Array (length, drop)
 import Data.Either (Either(Right))
 import Data.Foldable (for_)
-import Data.String (split)
+import Data.String (split, Pattern(..))
 import Node.Encoding (Encoding(UTF8))
 import Node.FS (FS)
 import Node.Process (PROCESS, stdin, argv)
@@ -45,7 +45,7 @@ main = do
       onEnd stdin do
         input <- readRef inputRef
         foundSuggestions <- newRef false
-        for_ (split "\n" input) \line ->
+        for_ (split (Pattern "\n") input) \line ->
           case jsonParser line >>= decodeJson >>= parsePsaResult of
             Right { warnings } | length warnings > 0 -> do
               writeRef foundSuggestions true

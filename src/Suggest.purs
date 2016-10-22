@@ -5,6 +5,8 @@ import Data.Array as Array
 import Data.List as List
 import Data.StrMap.ST as STMap
 import Data.String as Str
+import Data.String.Regex (regex, test) as Regex
+import Data.String.Regex.Flags (noFlags) as Regex
 import Node.Encoding as Encoding
 import Node.FS.Sync as File
 import Control.Monad.Eff (Eff)
@@ -16,9 +18,9 @@ import Data.Either (Either(Right, Left), either)
 import Data.Foldable (for_, intercalate)
 import Data.List (List(Nil, Cons), drop, (!!), length, fromFoldable)
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
+import Data.NonEmpty (fromNonEmpty)
 import Data.StrMap.ST (STStrMap)
 import Data.String (trim, joinWith)
-import Data.String.Regex as Regex
 import Data.Traversable (traverse)
 import Node.FS (FS)
 import Psa (PsaError, PsaAnnotedError, Position, PsaPath(Src), compareByLocation, annotatedError)
@@ -43,14 +45,14 @@ getSuggestions warnings = do
   let loadLinesImpl = loadLines files
   warnings' :: PsaAnnotedErrors <- sortBy compareByLocation <$> catMaybes <$> traverse (annotateError loadLinesImpl) warnings
   let replacements = mapMaybe getReplacement warnings'
-  pure { replacements: groupBy (\a b -> a.filename == b.filename) replacements, files: files }
+  pure { replacements: fromNonEmpty Array.cons <$> groupBy (\a b -> a.filename == b.filename) replacements, files: files }
   where
     loadLines files filename pos = do
       contents <- STMap.peek files filename >>= \cache ->
         case cache of
           Just lines -> pure lines
           Nothing -> do
-            lines <- Str.split "\n" <$> File.readTextFile Encoding.UTF8 filename
+            lines <- Str.split (Str.Pattern "\n") <$> File.readTextFile Encoding.UTF8 filename
             STMap.poke files filename lines
             pure lines
       let source = Array.slice (pos.startLine - 1) (pos.endLine) contents
