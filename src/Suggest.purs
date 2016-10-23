@@ -25,8 +25,6 @@ import Data.Traversable (fold, traverse)
 import Node.FS (FS)
 import Psa (PsaError, PsaAnnotedError, Position, PsaPath(Src), compareByLocation, annotatedError)
 
-import Debug.Trace
-
 type Replacement =
   { filename :: String
   , position :: Position
@@ -122,15 +120,17 @@ replaceFile' n m lines (Cons r@{ position: { startLine, startColumn, endLine, en
       final = Str.drop (endColumn - (if startLine == endLine then m else 1)) (fromMaybe "" $ lines !! (endLine - startLine))
       trailingNewline = either (const true) (\regex -> Regex.test regex replacement) (Regex.regex "\n\\s+$" Regex.noFlags)
       addNewline = trailingNewline && (not $ Str.null final)
-      replacement' = either (const replacement) (\regex -> Regex.replace regex ("\n" <> fold (replicate (startColumn-1) " ") <> "$1") replacement)
-        (Regex.regex "\n(.)" Regex.global)
-      newText = initial <> trim replacement' <> (if addNewline then "\n" else "")
-      _x = trace ("startColumn: " <> show startColumn <> ", replacement: " <> replacement <> ", replacement': " <> replacement') \_ -> unit
+      replace regex s text = either (const text) (\regex' -> Regex.replace regex' s text) (Regex.regex regex Regex.global)
+      tweak = replace "\\n(.)" ("\n" <> fold (replicate (startColumn-1) " ") <> "$1") >>>
+              replace "\\s+\\n" "\n" >>>
+              trim
+      newText = initial <> tweak replacement <> (if addNewline then "\n" else "")
       replaceNewText = case newText of
         "" -> id
         _ -> Cons newText
   in
     replaceNewText <$> replaceFile' endLine endColumn (Cons final (drop (endLine - startLine + 1) lines)) reps
+
 replaceFile' n _ _ reps@(Cons { position: { startLine } } _) | n > startLine =
   Left $ "Found replacement starting before current position: " <> show startLine <> ", " <> show n
 replaceFile' _ _ lines Nil = pure $ intercalate (Cons "\n" Nil) (List.singleton <$> lines)

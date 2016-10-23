@@ -66,6 +66,17 @@ main = runTest do
         , "Line 4"
         , "Line 5"
         ]) replacements
+    test "multi-line replacement trims trailing whitespace before newlines" do
+      let replacements = replace (List.fromFoldable [testReplacement' 2 4 2 6 "_ \n_   \n_  "])
+      Assert.equal (result
+        [ "Line 1"
+        , "Lin_"
+        , "   _"
+        , "   _2"
+        , "Line 3"
+        , "Line 4"
+        , "Line 5"
+        ]) replacements
 
   where
   -- psc line indexing is 1-based
