@@ -5,15 +5,13 @@ import Data.Array as Array
 import Data.List as List
 import Data.StrMap.ST as STMap
 import Data.String as Str
-import Data.String.Regex (regex, test) as Regex
-import Data.String.Regex.Flags (noFlags) as Regex
 import Node.Encoding as Encoding
 import Node.FS.Sync as File
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, error, log)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.ST (ST)
-import Data.Array (mapMaybe, concat, head, groupBy, catMaybes, sortBy)
+import Data.Array (replicate, mapMaybe, concat, head, groupBy, catMaybes, sortBy)
 import Data.Either (Either(Right, Left), either)
 import Data.Foldable (for_, intercalate)
 import Data.List (List(Nil, Cons), drop, (!!), length, fromFoldable)
@@ -21,9 +19,13 @@ import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
 import Data.NonEmpty (fromNonEmpty)
 import Data.StrMap.ST (STStrMap)
 import Data.String (trim, joinWith)
-import Data.Traversable (traverse)
+import Data.String.Regex (regex, test, replace) as Regex
+import Data.String.Regex.Flags (noFlags, global) as Regex
+import Data.Traversable (fold, traverse)
 import Node.FS (FS)
 import Psa (PsaError, PsaAnnotedError, Position, PsaPath(Src), compareByLocation, annotatedError)
+
+import Debug.Trace
 
 type Replacement =
   { filename :: String
@@ -120,7 +122,10 @@ replaceFile' n m lines (Cons r@{ position: { startLine, startColumn, endLine, en
       final = Str.drop (endColumn - (if startLine == endLine then m else 1)) (fromMaybe "" $ lines !! (endLine - startLine))
       trailingNewline = either (const true) (\regex -> Regex.test regex replacement) (Regex.regex "\n\\s+$" Regex.noFlags)
       addNewline = trailingNewline && (not $ Str.null final)
-      newText = initial <> trim replacement <> (if addNewline then "\n" else "")
+      replacement' = either (const replacement) (\regex -> Regex.replace regex ("\n" <> fold (replicate (startColumn-1) " ") <> "$1") replacement)
+        (Regex.regex "\n(.)" Regex.global)
+      newText = initial <> trim replacement' <> (if addNewline then "\n" else "")
+      _x = trace ("startColumn: " <> show startColumn <> ", replacement: " <> replacement <> ", replacement': " <> replacement') \_ -> unit
       replaceNewText = case newText of
         "" -> id
         _ -> Cons newText

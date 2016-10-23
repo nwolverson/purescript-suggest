@@ -44,7 +44,28 @@ main = runTest do
     test "multiple suggestions on one line" do
       let replacements = replace (List.fromFoldable [testReplacement' 2 1 2 2 "_", testReplacement' 2 4 2 6 "_"])
       Assert.equal (result [ "Line 1", "_in_2", "Line 3", "Line 4", "Line 5" ]) replacements
-
+    test "multi-line replacement" do
+      let replacements = replace (List.fromFoldable [testReplacement' 2 4 2 6 "_\n_\n_"])
+      Assert.equal (result
+        [ "Line 1"
+        , "Lin_"
+        , "   _"
+        , "   _2"
+        , "Line 3"
+        , "Line 4"
+        , "Line 5"
+        ]) replacements
+    test "multi-line replacement (start of line)" do
+      let replacements = replace (List.fromFoldable [testReplacement' 2 1 2 2 "_\n_\n_"])
+      Assert.equal (result
+        [ "Line 1"
+        , "_"
+        , "_"
+        , "_ine 2"
+        , "Line 3"
+        , "Line 4"
+        , "Line 5"
+        ]) replacements
 
   where
   -- psc line indexing is 1-based
