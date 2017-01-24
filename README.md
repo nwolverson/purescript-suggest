@@ -25,12 +25,12 @@ errors. This also gives you the chance to choose which codes to replace.
 
 To check changes that will be applied:
 ```
-  pulp build --stash --censor-lib --json-errors 2>&1 | ps-suggest --list
+  pulp build -- --stash --censor-lib --json-errors 2>&1 | ps-suggest --list
 ```
 
 To apply the changes to all affected files:
 ```
-  pulp build --stash --censor-lib --json-errors 2>&1 | ps-suggest --apply
+  pulp build -- --stash --censor-lib --json-errors 2>&1 | ps-suggest --apply
 ```
 
 # Library usage
