@@ -13,6 +13,8 @@ import Test.Unit (test, suite)
 import Test.Unit.Console (TESTOUTPUT)
 import Test.Unit.Main (runTest)
 
+-- TODO: If suggestion starts at the start of a line, and ends at the end, consume the trailing \n
+
 main :: forall e. Eff (avar :: AVAR, console :: CONSOLE, testOutput :: TESTOUTPUT | e) Unit
 main = runTest do
   suite "suggestions" do
@@ -34,6 +36,16 @@ main = runTest do
     test "replacements overlap" do
       let replacements = replace (List.fromFoldable [testReplacement 2 4 "TEXT1", testReplacement 3 5 "TEXT2"])
       Assert.assert "should be Left" $ isLeft replacements
+  suite "removing lines" do
+    test "remove single line" do
+      let replacements = replace (List.singleton (testReplacement 2 2 ""))
+      Assert.equal (result [ "Line 1", "Line 3", "Line 4", "Line 5" ]) replacements
+    test "remove two lines" do
+      let replacements = replace (List.singleton (testReplacement 2 3 ""))
+      Assert.equal (result [ "Line 1", "Line 4", "Line 5" ]) replacements
+    test "remove two separate lines" do
+      let replacements = replace (List.fromFoldable [testReplacement 2 2 "", testReplacement 4 4 ""])
+      Assert.equal (result [ "Line 1", "Line 3", "Line 5" ]) replacements
   suite "suggestions within a line" do
     test "suggestion within single line" do
       let replacements = replace (List.singleton (testReplacement' 2 2 2 4 "_"))

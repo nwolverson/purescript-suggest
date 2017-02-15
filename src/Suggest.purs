@@ -128,8 +128,13 @@ replaceFile' n m lines (Cons r@{ position: { startLine, startColumn, endLine, en
       replaceNewText = case newText of
         "" -> id
         _ -> Cons newText
+      remainingLines = (drop (endLine - startLine + 1) lines)
   in
-    replaceNewText <$> replaceFile' endLine endColumn (Cons final (drop (endLine - startLine + 1) lines)) reps
+    if final == "" && newText == "" then
+      -- Avoid blank lines when replacing entire line(s) with blank
+      replaceNewText <$> replaceFile' (endLine+1) 1 remainingLines reps
+    else
+      replaceNewText <$> replaceFile' endLine endColumn (Cons final remainingLines) reps
 
 replaceFile' n _ _ reps@(Cons { position: { startLine } } _) | n > startLine =
   Left $ "Found replacement starting before current position: " <> show startLine <> ", " <> show n
