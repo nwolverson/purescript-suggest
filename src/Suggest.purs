@@ -32,7 +32,7 @@ type Replacement =
   , replacement :: String
 }
 
-type SEff eff h = (console :: CONSOLE, err :: EXCEPTION, fs :: FS, st :: ST h | eff)
+type SEff eff h = (console :: CONSOLE, exception :: EXCEPTION, fs :: FS, st :: ST h | eff)
 
 -- This alias avoids psc bug which should be fixed in 9.0
 type PsaAnnotedErrors = Array PsaAnnotedError
@@ -53,7 +53,7 @@ getSuggestions warnings = do
           Just lines -> pure lines
           Nothing -> do
             lines <- Str.split (Str.Pattern "\n") <$> File.readTextFile Encoding.UTF8 filename
-            STMap.poke files filename lines
+            _ <- STMap.poke files filename lines
             pure lines
       let source = Array.slice (pos.startLine - 1) (pos.endLine) contents
       pure $ Just source
@@ -96,15 +96,12 @@ listSuggestions warnings = do
     Just { filename } -> Just $ filename <> ": " <> show (Array.length reps) <> " replacements"
     _ -> Nothing
 
-replaceFile :: forall eff. Array String -> String -> Array Replacement -> Eff (console :: CONSOLE, err :: EXCEPTION, fs :: FS | eff) Unit
-replaceFile lines filename group = do
-  let group' = (fromFoldable group) :: List Replacement
-  let lines' = (fromFoldable lines) :: List String
-  let replaced = replaceFile' 1 1 lines' group'
-  case replaced of
+replaceFile :: forall eff. Array String -> String -> Array Replacement -> Eff (console :: CONSOLE, exception :: EXCEPTION, fs :: FS | eff) Unit
+replaceFile lines filename group =
+  case replaceFile' 1 1 (fromFoldable lines) (fromFoldable group) of
     Left err -> error err
-    Right lines -> do
-      File.writeTextFile Encoding.UTF8 filename $ intercalate "" lines
+    Right outLines -> do
+      File.writeTextFile Encoding.UTF8 filename $ intercalate "" outLines
       log $ filename <> ": Applied " <> show (Array.length group) <> " fixes"
 
 -- | This is where all the real work happens.

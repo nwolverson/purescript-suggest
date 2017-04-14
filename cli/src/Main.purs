@@ -31,7 +31,7 @@ parseArgs = do
     [ "--help" ]  -> Help false
     _             -> Help true
 
-main :: forall e h. Eff (console :: CONSOLE, err :: EXCEPTION, fs :: FS, st :: ST h, ref :: REF, process :: PROCESS | e) Unit
+main :: forall e h. Eff (console :: CONSOLE, exception :: EXCEPTION, fs :: FS, st :: ST h, ref :: REF, process :: PROCESS | e) Unit
 main = do
   action <- parseArgs
   case action of
