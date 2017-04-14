@@ -3,14 +3,6 @@
 Command line tool (and library) to apply the suggested fixes from `psc` for warnings, such as
 removing redundant imports, or making imports explicit.
 
-# Warning
-
-This is a tool that modifies your source code in place by design. Errors in
-this code, or any issues with the warnings passed in, could result in the deletion
-of your precious source code.
-
-COMMIT EARLY COMMIT OFTEN.
-
 # Installation
 
 To install `ps-suggest` globally:
@@ -32,6 +24,12 @@ To apply the changes to all affected files:
 ```
   pulp build -- --stash --censor-lib --json-errors 2>&1 | ps-suggest --apply
 ```
+
+# Warning
+
+This is a tool that modifies your source code in place by design. Errors in
+this code, or any issues with the warnings passed in, could result in the deletion
+of your precious source code. As always it's a good idea to commit your code periodically.
 
 # Library usage
 

@@ -12,3 +12,8 @@ install:
   - npm install -g bower pulp
 script:
   - npm install && bower install && npm test
+after_success:
+- >-
+  test $TRAVIS_TAG &&
+  echo $GITHUB_TOKEN | pulp login &&
+  echo y | pulp publish --no-push
