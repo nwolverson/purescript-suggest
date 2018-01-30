@@ -11,7 +11,7 @@
   ],
   "dependencies": {
     "purescript-console": "^3.0.0",
-    "purescript-psa-utils": "^3.0.0",
+    "purescript-psa-utils": "^4.0.0",
     "purescript-refs": "^3.0.0",
     "purescript-node-streams": "^3.0.0",
     "purescript-node-process": "^4.0.0",
