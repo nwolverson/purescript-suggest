@@ -1,6 +1,7 @@
 module Main where
 
 import Prelude
+
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (error, CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION)
@@ -11,7 +12,7 @@ import Data.Argonaut.Parser (jsonParser)
 import Data.Array (length, drop)
 import Data.Either (Either(Right))
 import Data.Foldable (for_)
-import Data.String (split)
+import Data.String (Pattern(..), split)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS (FS)
 import Node.Process (PROCESS, stdin, argv)
@@ -31,7 +32,7 @@ parseArgs = do
     [ "--help" ]  -> Help false
     _             -> Help true
 
-main :: forall e h. Eff (console :: CONSOLE, err :: EXCEPTION, fs :: FS, st :: ST h, ref :: REF, process :: PROCESS | e) Unit
+main :: forall e h. Eff (console :: CONSOLE, exception :: EXCEPTION, fs :: FS, st :: ST h, ref :: REF, process :: PROCESS | e) Unit
 main = do
   action <- parseArgs
   case action of
@@ -45,7 +46,7 @@ main = do
       onEnd stdin do
         input <- readRef inputRef
         foundSuggestions <- newRef false
-        for_ (split "\n" input) \line ->
+        for_ (split (Pattern "\n") input) \line ->
           case jsonParser line >>= decodeJson >>= parsePsaResult of
             Right { warnings } | length warnings > 0 -> do
               writeRef foundSuggestions true

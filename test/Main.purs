@@ -1,18 +1,20 @@
 module Test.Main where
 
 import Prelude
-import Data.List as List
-import Test.Unit.Assert as Assert
+
+import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE)
 import Data.Either (isLeft, Either(Right))
 import Data.Foldable (intercalate)
+import Data.List as List
 import Suggest (replaceFile')
 import Test.Unit (test, suite)
+import Test.Unit.Assert as Assert
 import Test.Unit.Console (TESTOUTPUT)
 import Test.Unit.Main (runTest)
 
-main :: forall e. Eff (console :: CONSOLE, testOutput :: TESTOUTPUT | e) Unit
+main :: forall e. Eff (avar :: AVAR, console :: CONSOLE, testOutput :: TESTOUTPUT | e) Unit
 main = runTest do
   suite "suggestions" do
     test "replace multi-line" do

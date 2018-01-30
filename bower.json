@@ -10,14 +10,17 @@
     "output"
   ],
   "dependencies": {
-    "purescript-console": "^1.0.0",
-    "purescript-psa-utils": "^1.0.0",
-    "purescript-refs": "^1.0.0",
-    "purescript-node-streams": "^1.0.0",
-    "purescript-node-process": "^2.0.0",
-    "purescript-node-buffer": "^1.0.0"
+    "purescript-console": "^3.0.0",
+    "purescript-psa-utils": "^4.0.0",
+    "purescript-refs": "^3.0.0",
+    "purescript-node-streams": "^3.3.0",
+    "purescript-node-process": "^5.0.0",
+    "purescript-node-buffer": "^4.1.0"
   },
   "devDependencies": {
-    "purescript-test-unit": "^7.0.0"
+    "purescript-test-unit": "^13.0.0"
+  },
+  "resolutions": {
+    "purescript-node-buffer": "^4.1.0"
   }
 }

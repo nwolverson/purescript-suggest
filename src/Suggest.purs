@@ -1,26 +1,28 @@
 module Suggest where
 
 import Prelude
-import Data.Array as Array
-import Data.List as List
-import Data.StrMap.ST as STMap
-import Data.String as Str
-import Node.Encoding as Encoding
-import Node.FS.Sync as File
+
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, error, log)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.ST (ST)
 import Data.Array (mapMaybe, concat, head, groupBy, catMaybes, sortBy)
+import Data.Array as Array
 import Data.Either (Either(Right, Left), either)
 import Data.Foldable (for_, intercalate)
 import Data.List (List(Nil, Cons), drop, (!!), length, fromFoldable)
+import Data.List as List
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
 import Data.StrMap.ST (STStrMap)
+import Data.StrMap.ST as STMap
 import Data.String (trim, joinWith)
+import Data.String as Str
 import Data.String.Regex as Regex
+import Data.String.Regex.Flags as RFlags
 import Data.Traversable (traverse)
+import Node.Encoding as Encoding
 import Node.FS (FS)
+import Node.FS.Sync as File
 import Psa (PsaError, PsaAnnotedError, Position, PsaPath(Src), compareByLocation, annotatedError)
 
 type Replacement =
@@ -30,7 +32,7 @@ type Replacement =
   , replacement :: String
 }
 
-type SEff eff h = (console :: CONSOLE, err :: EXCEPTION, fs :: FS, st :: ST h | eff)
+type SEff eff h = (console :: CONSOLE, exception :: EXCEPTION, fs :: FS, st :: ST h | eff)
 
 -- This alias avoids psc bug which should be fixed in 9.0
 type PsaAnnotedErrors = Array PsaAnnotedError
@@ -43,15 +45,15 @@ getSuggestions warnings = do
   let loadLinesImpl = loadLines files
   warnings' :: PsaAnnotedErrors <- sortBy compareByLocation <$> catMaybes <$> traverse (annotateError loadLinesImpl) warnings
   let replacements = mapMaybe getReplacement warnings'
-  pure { replacements: groupBy (\a b -> a.filename == b.filename) replacements, files: files }
+  pure { replacements: Array.fromFoldable <$> groupBy (\a b -> a.filename == b.filename) replacements, files }
   where
     loadLines files filename pos = do
       contents <- STMap.peek files filename >>= \cache ->
         case cache of
           Just lines -> pure lines
           Nothing -> do
-            lines <- Str.split "\n" <$> File.readTextFile Encoding.UTF8 filename
-            STMap.poke files filename lines
+            lines <- Str.split (Str.Pattern "\n") <$> File.readTextFile Encoding.UTF8 filename
+            _ <- STMap.poke files filename lines
             pure lines
       let source = Array.slice (pos.startLine - 1) (pos.endLine) contents
       pure $ Just source
@@ -94,15 +96,15 @@ listSuggestions warnings = do
     Just { filename } -> Just $ filename <> ": " <> show (Array.length reps) <> " replacements"
     _ -> Nothing
 
-replaceFile :: forall eff. Array String -> String -> Array Replacement -> Eff (console :: CONSOLE, err :: EXCEPTION, fs :: FS | eff) Unit
+replaceFile :: forall eff. Array String -> String -> Array Replacement -> Eff (console :: CONSOLE, exception :: EXCEPTION, fs :: FS | eff) Unit
 replaceFile lines filename group = do
   let group' = (fromFoldable group) :: List Replacement
   let lines' = (fromFoldable lines) :: List String
   let replaced = replaceFile' 1 1 lines' group'
   case replaced of
     Left err -> error err
-    Right lines -> do
-      File.writeTextFile Encoding.UTF8 filename $ intercalate "" lines
+    Right lines' -> do
+      File.writeTextFile Encoding.UTF8 filename $ intercalate "" lines'
       log $ filename <> ": Applied " <> show (Array.length group) <> " fixes"
 
 -- | This is where all the real work happens.
@@ -116,7 +118,7 @@ replaceFile' n _ lines reps@(Cons { position: { startLine } } _) | n < startLine
 replaceFile' n m lines (Cons r@{ position: { startLine, startColumn, endLine, endColumn }, original, replacement } reps) | n == startLine =
   let initial = Str.take (startColumn - m) (fromMaybe "" $ List.head lines)
       final = Str.drop (endColumn - (if startLine == endLine then m else 1)) (fromMaybe "" $ lines !! (endLine - startLine))
-      trailingNewline = either (const true) (\regex -> Regex.test regex replacement) (Regex.regex "\n\\s+$" Regex.noFlags)
+      trailingNewline = either (const true) (\regex -> Regex.test regex replacement) (Regex.regex "\n\\s+$" RFlags.noFlags)
       addNewline = trailingNewline && (not $ Str.null final)
       newText = initial <> trim replacement <> (if addNewline then "\n" else "")
       replaceNewText = case newText of
