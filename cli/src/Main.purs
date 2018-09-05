@@ -1,27 +1,25 @@
 module Main where
 
 import Prelude
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (error, CONSOLE, log)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.Eff.Ref (writeRef, readRef, modifyRef, newRef, REF)
-import Control.Monad.ST (ST)
+
 import Data.Argonaut.Decode (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array (length, drop)
 import Data.Either (Either(Right))
 import Data.Foldable (for_)
 import Data.String (split, Pattern(..))
+import Effect (Effect)
+import Effect.Console (error, log)
+import Effect.Ref as Ref
 import Node.Encoding (Encoding(UTF8))
-import Node.FS (FS)
-import Node.Process (PROCESS, stdin, argv)
+import Node.Process (stdin, argv)
 import Node.Stream (onEnd, onDataString)
 import Psa (parsePsaResult)
 import Suggest (listSuggestions, applySuggestions)
 
 data Action = Apply | List | Help Boolean
 
-parseArgs :: forall eff. Eff (process :: PROCESS | eff) Action
+parseArgs :: Effect Action
 parseArgs = do
   argv <- drop 2 <$> argv
   pure $ case argv of
@@ -31,7 +29,7 @@ parseArgs = do
     [ "--help" ]  -> Help false
     _             -> Help true
 
-main :: forall e h. Eff (console :: CONSOLE, exception :: EXCEPTION, fs :: FS, st :: ST h, ref :: REF, process :: PROCESS | e) Unit
+main :: Effect Unit
 main = do
   action <- parseArgs
   case action of
@@ -39,20 +37,20 @@ main = do
       when isUnrecognised $ error "Unrecognised arguments"
       log "Usage: ps-suggest [--list | --apply]\nJSON compiler errors must be supplied on stdin. You probably want to pipe these from psa."
     _ -> do
-      inputRef <- newRef ""
+      inputRef <- Ref.new ""
       onDataString stdin UTF8 $ \s -> do
-        modifyRef inputRef (_ <> s)
+        Ref.modify_ (_ <> s) inputRef
       onEnd stdin do
-        input <- readRef inputRef
-        foundSuggestions <- newRef false
+        input <- Ref.read inputRef
+        foundSuggestions <- Ref.new false
         for_ (split (Pattern "\n") input) \line ->
           case jsonParser line >>= decodeJson >>= parsePsaResult of
             Right { warnings } | length warnings > 0 -> do
-              writeRef foundSuggestions true
+              Ref.write true foundSuggestions
               case action of
                 List -> listSuggestions warnings >>= log
                 Apply -> applySuggestions warnings
                 _ -> pure unit
             _ -> pure unit
-        readRef foundSuggestions >>= \found ->
+        Ref.read foundSuggestions >>= \found ->
           unless found $ log "No suggestions found."
