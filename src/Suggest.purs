@@ -1,29 +1,29 @@
 module Suggest where
 
 import Prelude
-import Data.Array as Array
-import Data.List as List
-import Data.StrMap.ST as STMap
-import Data.String as Str
-import Node.Encoding as Encoding
-import Node.FS.Sync as File
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console (CONSOLE, error, log)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.ST (ST)
+
 import Data.Array (replicate, mapMaybe, concat, head, groupBy, catMaybes, sortBy)
+import Data.Array as Array
+import Data.Array.NonEmpty as NEA
 import Data.Either (Either(Right, Left), either)
 import Data.Foldable (for_, intercalate)
 import Data.List (List(Nil, Cons), drop, (!!), length, fromFoldable)
+import Data.List as List
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe(Nothing, Just), fromMaybe)
-import Data.NonEmpty (fromNonEmpty)
-import Data.StrMap.ST (STStrMap)
 import Data.String (trim, joinWith)
+import Data.String as Str
 import Data.String.Regex (regex, test, replace) as Regex
 import Data.String.Regex.Flags (noFlags, global) as Regex
 import Data.Traversable (fold, traverse)
-import Node.FS (FS)
-import Psa (PsaError, PsaAnnotedError, Position, PsaPath(Src), compareByLocation, annotatedError)
+import Effect (Effect)
+import Effect.Console (error, log)
+import Effect.Ref (Ref)
+import Effect.Ref as Ref
+import Node.Encoding as Encoding
+import Node.FS.Sync as File
+import Psa (PsaError, Position, PsaPath(Src), compareByLocation, annotatedError)
 
 type Replacement =
   { filename :: String
@@ -32,28 +32,23 @@ type Replacement =
   , replacement :: String
 }
 
-type SEff eff h = (console :: CONSOLE, exception :: EXCEPTION, fs :: FS, st :: ST h | eff)
+type Suggestions = { replacements:: Array (Array Replacement), files:: Ref (Map String (Array String)) }
 
--- This alias avoids psc bug which should be fixed in 9.0
-type PsaAnnotedErrors = Array PsaAnnotedError
-
-type Suggestions h = { replacements:: Array (Array Replacement), files:: STStrMap h (Array String)}
-
-getSuggestions :: forall eff h. Array PsaError -> Eff (SEff eff h) (Suggestions h)
+getSuggestions :: Array PsaError -> Effect Suggestions
 getSuggestions warnings = do
-  files <- STMap.new
+  files <- Ref.new Map.empty
   let loadLinesImpl = loadLines files
-  warnings' :: PsaAnnotedErrors <- sortBy compareByLocation <$> catMaybes <$> traverse (annotateError loadLinesImpl) warnings
+  warnings' <- sortBy compareByLocation <$> catMaybes <$> traverse (annotateError loadLinesImpl) warnings
   let replacements = mapMaybe getReplacement warnings'
-  pure { replacements: fromNonEmpty Array.cons <$> groupBy (\a b -> a.filename == b.filename) replacements, files: files }
+  pure { replacements: map NEA.toArray (groupBy (\a b -> a.filename == b.filename) replacements), files }
   where
     loadLines files filename pos = do
-      contents <- STMap.peek files filename >>= \cache ->
-        case cache of
+      contents <- Ref.read files >>= \cache ->
+        case Map.lookup filename cache of
           Just lines -> pure lines
           Nothing -> do
             lines <- Str.split (Str.Pattern "\n") <$> File.readTextFile Encoding.UTF8 filename
-            _ <- STMap.poke files filename lines
+            Ref.modify_ (Map.insert filename lines) files
             pure lines
       let source = Array.slice (pos.startLine - 1) (pos.endLine) contents
       pure $ Just source
@@ -72,19 +67,19 @@ getSuggestions warnings = do
       source <- fromMaybe (pure Nothing) (loadLinesF <$> error.filename <*> error.position)
       pure $ annotatedError <$> (Src <$> error.filename) <*> pure source <*> pure error
 
-applySuggestions :: forall eff h. Array PsaError -> Eff (SEff eff h) Unit
+applySuggestions :: Array PsaError -> Effect Unit
 applySuggestions warnings = do
   { replacements, files } <- getSuggestions warnings
   for_ replacements $ \group ->
     case head group of
       Just { filename } -> do
         log $ "Processing " <> filename
-        STMap.peek files filename >>= \res -> case res of
+        Ref.read files >>= \res -> case Map.lookup filename res of
           Just lines -> replaceFile lines filename group
           _ -> pure unit
       Nothing -> pure unit
 
-listSuggestions :: forall eff h. Array PsaError -> Eff (SEff eff h) String
+listSuggestions :: Array PsaError -> Effect String
 listSuggestions warnings = do
   { replacements, files } <- getSuggestions warnings
   let totalCount = Array.length (concat replacements)
@@ -96,7 +91,7 @@ listSuggestions warnings = do
     Just { filename } -> Just $ filename <> ": " <> show (Array.length reps) <> " replacements"
     _ -> Nothing
 
-replaceFile :: forall eff. Array String -> String -> Array Replacement -> Eff (console :: CONSOLE, exception :: EXCEPTION, fs :: FS | eff) Unit
+replaceFile :: Array String -> String -> Array Replacement -> Effect Unit
 replaceFile lines filename group =
   case replaceFile' 1 1 (fromFoldable lines) (fromFoldable group) of
     Left err -> error err
@@ -123,7 +118,7 @@ replaceFile' n m lines (Cons r@{ position: { startLine, startColumn, endLine, en
               trim
       newText = initial <> tweak replacement <> (if addNewline then "\n" else "")
       replaceNewText = case newText of
-        "" -> id
+        "" -> identity
         _ -> Cons newText
       remainingLines = (drop (endLine - startLine + 1) lines)
   in
