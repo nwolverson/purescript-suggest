@@ -81,7 +81,7 @@ applySuggestions warnings = do
 
 listSuggestions :: Array PsaError -> Effect String
 listSuggestions warnings = do
-  { replacements, files } <- getSuggestions warnings
+  { replacements } <- getSuggestions warnings
   let totalCount = Array.length (concat replacements)
       msg = "Found " <> show totalCount <> " suggestions in " <> show (Array.length replacements) <> " files.\n"
       msg' = intercalate "\n" $ mapMaybe rep replacements
@@ -107,7 +107,7 @@ replaceFile' n _ lines reps@(Cons { position: { startLine } } _) | n < startLine
   (withNewlines (List.take count lines) <> _) <$> replaceFile' startLine 1 (drop count lines) reps
   where
     count = startLine - n
-replaceFile' n m lines (Cons r@{ position: { startLine, startColumn, endLine, endColumn }, original, replacement } reps) | n == startLine =
+replaceFile' n m lines (Cons { position: { startLine, startColumn, endLine, endColumn }, replacement } reps) | n == startLine =
   let initial = Str.take (startColumn - m) (fromMaybe "" $ List.head lines)
       final = Str.drop (endColumn - (if startLine == endLine then m else 1)) (fromMaybe "" $ lines !! (endLine - startLine))
       trailingNewline = either (const true) (\regex -> Regex.test regex replacement) (Regex.regex "\n\\s+$" Regex.noFlags)
@@ -128,7 +128,7 @@ replaceFile' n m lines (Cons r@{ position: { startLine, startColumn, endLine, en
     else
       replaceNewText <$> replaceFile' endLine endColumn (Cons final remainingLines) reps
 
-replaceFile' n _ _ reps@(Cons { position: { startLine } } _) | n > startLine =
+replaceFile' n _ _ (Cons { position: { startLine } } _) | n > startLine =
   Left $ "Found replacement starting before current position: " <> show startLine <> ", " <> show n
 replaceFile' _ _ lines Nil = pure $ intercalate (Cons "\n" Nil) (List.singleton <$> lines)
 replaceFile' _ _ _ _ = Left "Found replacement after end of file"

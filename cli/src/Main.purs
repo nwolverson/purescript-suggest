@@ -2,9 +2,10 @@ module Main where
 
 import Prelude
 
-import Data.Argonaut.Decode (decodeJson)
+import Data.Argonaut.Decode (decodeJson, printJsonDecodeError)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Array (length, drop)
+import Data.Bifunctor (lmap)
 import Data.Either (Either(Right))
 import Data.Foldable (for_)
 import Data.String (split, Pattern(..))
@@ -43,8 +44,9 @@ main = do
       onEnd stdin do
         input <- Ref.read inputRef
         foundSuggestions <- Ref.new false
-        for_ (split (Pattern "\n") input) \line ->
-          case jsonParser line >>= decodeJson >>= parsePsaResult of
+        for_ (split (Pattern "\n") input) \line -> do
+          let parsedJson = jsonParser line >>= decodeJson >>> lmap printJsonDecodeError >>= parsePsaResult
+          case parsedJson of
             Right { warnings } | length warnings > 0 -> do
               Ref.write true foundSuggestions
               case action of

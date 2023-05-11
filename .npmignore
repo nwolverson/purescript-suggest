@@ -1,4 +1,8 @@
-/bower_components/
-/node_modules/
-/.pulp-cache/
+/.github/
+/.spago/
 /.psci*
+/output/*/externs.cbor
+/output/cache-db.json
+*.dhall
+/.psc-ide-port
+/.purs-repl
