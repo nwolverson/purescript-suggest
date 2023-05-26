@@ -2,14 +2,15 @@
   "name": "purescript-suggest",
   "version": "2.3.0",
   "description": "Apply PureScript compiler suggestions to fix warnings",
+  "type": "module",
   "bin": {
     "ps-suggest": "cli/index.js"
   },
   "scripts": {
-    "build": "pulp build -I cli/src",
+    "build": "spago build",
     "preversion": "npm test",
-    "prepublish": "bower install && npm run build",
-    "test": "pulp test"
+    "prepublish": "npm run build",
+    "test": "spago test"
   },
   "keywords": [
     "purescript"
@@ -21,5 +22,9 @@
   },
   "bugs": {
     "url": "https://github.com/nwolverson/purescript-suggest/issues"
+  },
+  "devDependencies": {
+    "purescript": "^0.15.9",
+    "spago": "^0.21.0"
   }
 }
